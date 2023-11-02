@@ -1,7 +1,8 @@
 import { Component, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Store } from "@ngrx/store";
-import { LinksFeature } from "../state";
+import { LinksEntity, LinksFeature } from "../state";
+import { LinksCommands } from "../state/links.actions";
 
 @Component({
   selector: "app-list",
@@ -14,6 +15,11 @@ import { LinksFeature } from "../state";
           {{ link.description }}
         </h2>
         <p>{{ link.href }}</p>
+        <div class="card-actions justify-end">
+          <button (click)="removeLink(link)" class="btn btn-sm btn-error">
+            X
+          </button>
+        </div>
       </div>
     </div>
   `,
@@ -22,4 +28,8 @@ import { LinksFeature } from "../state";
 export class ListComponent {
   store = inject(Store);
   links = this.store.selectSignal(LinksFeature.getAllLinks);
+
+  removeLink(link: LinksEntity) {
+    this.store.dispatch(LinksCommands.removeLink({ payload: link }));
+  }
 }
