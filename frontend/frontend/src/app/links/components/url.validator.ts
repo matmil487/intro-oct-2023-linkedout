@@ -1,5 +1,5 @@
 import { AbstractControl } from "@angular/forms";
- 
+
 // a validator function
 export function urlValidator(
   control: AbstractControl
