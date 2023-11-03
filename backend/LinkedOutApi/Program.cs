@@ -1,4 +1,5 @@
 using LinkedOutApi;
+using LinkedOutApi.ReadModels;
 using Marten;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,7 @@ var connectionString = builder.Configuration.GetConnectionString("database") ?? 
 builder.Services.AddMarten(options =>
 {
     options.Connection(connectionString);
+    options.Projections.Snapshot<UserLinks>(Marten.Events.Projections.SnapshotLifecycle.Inline);
 }).UseLightweightSessions();
 
 builder.Services.AddScoped<UserService>();
@@ -83,8 +85,38 @@ app.MapGet("/user/counter", async (IDocumentSession session, UserService user, C
     }
 }).RequireAuthorization();
 
+app.MapPost("/user/links", async (
+    UserLinkCreate request,
+    UserService service,
+    IDocumentSession session,
+    CancellationToken token) =>
+{
+    var userId = await service.GetUserIdAsync(token);
+
+    session.Events.Append(userId, request); // as part of this going to update that UserLinks
+    await session.SaveChangesAsync(token);
+    return Results.Ok(request);
+}).RequireAuthorization();
+
+app.MapGet("/user/links", async (UserService service, IDocumentSession session, CancellationToken token) =>
+{
+    var userId = await service.GetUserIdAsync(token);
+    var response = await session.Query<UserLinks>().Where(u => u.Id == userId).SingleOrDefaultAsync();
+    return Results.Ok(response);
+}).RequireAuthorization();
+
+app.MapDelete("/user/links/{id:Guid}", async (Guid Id, UserService service, IDocumentSession session, CancellationToken token) =>
+{
+    var userId = await service.GetUserIdAsync(token);
+    session.Events.Append(userId, new UserDeletedLink(Id));
+    await session.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
 app.Run();
 
 
+public record UserLinkCreate(Guid Id, string Href, string Description);
 public record CounterRequest(int Current, int By);
 public record UserCounter(Guid Id, int Current, int By);
+
+public record UserDeletedLink(Guid Id);

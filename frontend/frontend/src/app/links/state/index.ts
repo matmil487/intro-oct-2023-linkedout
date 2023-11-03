@@ -18,7 +18,10 @@ export const LinksFeature = createFeature({
   reducer: createReducer(
     initialState,
     on(LinksCommands.addLink, (s, a) => adapter.addOne(a.payload, s)),
-    on(LinksDocuments.links, (s, { payload }) => adapter.setAll(payload, s))
+    on(LinksDocuments.links, (s, { payload }) => adapter.setAll(payload, s)),
+    on(LinksCommands.removeLink, (s, { payload }) =>
+      adapter.removeOne(payload.id, s)
+    )
   ),
   extraSelectors: ({ selectLinksFeatureState }) => ({
     getAllLinks: adapter.getSelectors(selectLinksFeatureState).selectAll, // LinksEntity[]

@@ -10,6 +10,17 @@ import { LinksEntity } from ".";
 export class LinksEffects {
   baseUrl = environment.apiUrl + "user";
 
+  removeLink$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(LinksCommands.removeLink),
+        mergeMap(({ payload }) =>
+          this.client.delete(this.baseUrl + "/links/" + payload.id)
+        )
+      ),
+    { dispatch: false }
+  );
+
   logIn$ = createEffect(() =>
     this.actions$.pipe(
       ofType(LinksEvents.linksEntered),
